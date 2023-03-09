@@ -39,8 +39,7 @@ def findAngle(x1, y1, x2, y2):
     return degree
 
 def sendWarningBadPosture(x):
-    print("warning")
-    pass
+    print("TODO: warning with sound")
 
 def is_bad_posture(neck_inclination, torso_inclination ) -> bool:
     return neck_inclination < 40 and torso_inclination < 10
@@ -75,7 +74,7 @@ def main(double_camera=False):
     frames_without_changing_position = 0
 
     # Meta.
-    fps = 2
+    fps = 1
     
     # Initialize frame counters for posture
     good_frames = 0
