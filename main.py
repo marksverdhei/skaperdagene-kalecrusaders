@@ -45,29 +45,30 @@ def sendWarningBadPosture(x):
 def is_bad_posture(neck_inclination, torso_inclination ) -> bool:
     return neck_inclination < 40 and torso_inclination < 10
 
-def should_check_changed_position(newHipY, newShoulderY, oldHipY, oldShoulderY, height ) -> bool:
-    return newHipY != None and newShoulderY != None and oldHipY != None and oldShoulderY != None and height!= None and newHipY <= height and newShoulderY <= height and oldHipY <= height and oldShoulderY <= height 
+def should_check_changed_position(newShoulderY, oldShoulderY, height ) -> bool:
+    if (newShoulderY != None and oldShoulderY == None) or (newShoulderY == None and oldShoulderY != None):
+        # if the shoulder disappear/appears from screen then there was movement
+        return True
 
-def has_change_position(newHipY, newShoulderY, oldHipY, oldShoulderY, height ) -> bool:
-    print(newShoulderY)
-    print(newHipY)
+    if (newShoulderY == None and oldShoulderY == None): 
+        return True
+
+    return height!= None and newShoulderY <= height and oldShoulderY <= height 
+
     
+def has_change_position( newShoulderY, oldShoulderY, height ) -> bool:
+    print(newShoulderY)    
     print(oldShoulderY)
-    print(oldHipY)
-
     print(height)
-    return abs(abs(newShoulderY-newHipY) - abs(oldShoulderY-oldHipY)) > (height / 20)
+    return abs(newShoulderY-oldShoulderY) > (height / 20)
 
 
 def main(double_camera=False):
-
-
     # If you stay in bad posture for more than 30 seconds send an alert.
     shouldNotBeInBadPostureForSeconds = 30
 
     # Should change position every
     shouldChangePositionEvery = 30
-    old_l_hip_y = None
     old_l_shldr_y = None
         
     # Initialize frame counters for standing/sitting
@@ -237,15 +238,13 @@ def main(double_camera=False):
             sendWarningBadPosture()
 
         # setting initial values
-        if old_l_hip_y == None: 
-            old_l_hip_y = l_hip_y
         if old_l_shldr_y == None: 
             old_l_shldr_y = l_shldr_y
         
         # checking if the person has changed position between standing / sitting
         ## checking that I have all the values or this check makes no sense
-        if should_check_changed_position(l_hip_y, l_shldr_y, old_l_hip_y, old_l_shldr_y, h):
-            if has_change_position(l_hip_y, l_shldr_y, old_l_hip_y, old_l_shldr_y, h):
+        if should_check_changed_position( l_shldr_y,  old_l_shldr_y, h):
+            if has_change_position( l_shldr_y,  old_l_shldr_y, h):
                 frames_without_changing_position = 0
                 print("changed position")
             else:
@@ -260,7 +259,6 @@ def main(double_camera=False):
             print("skipping position change")
         
         # update values
-        old_l_hip_y = l_hip_y
         old_l_shldr_y = l_shldr_y
         
         cv2.imshow('MediaPipe Pose',image)
