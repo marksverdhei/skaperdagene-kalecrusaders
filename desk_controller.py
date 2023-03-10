@@ -29,18 +29,17 @@ class DeskController:
 
     def ascend_to_top(self):
         self.ascend()
-        time.sleep(5)
+        time.sleep(13)
         self.halt()
-
 
     def descend_to_bottom(self):
         self.descend()
-        time.sleep(5)
+        time.sleep(13)
         self.halt()
 
     def __enter__(self):
        return self
 
-    def __exit__(self):
+    def __exit__(self, _, _, _):
         self.servo.close()
         GPIO.cleanup()
