@@ -161,15 +161,17 @@ def main(double_camera=False):
     desk = DeskController()
     desk.ascend_to_top()
     bad_time_start = datetime.now()
+    good_time_start = datetime.now()
+
     current_desk_position = DeskState.TOP
 
     
     # If you stay in bad posture for more than 10 seconds send an alert.
-    bad_posture_alert_threshold_seconds = 60
+    bad_posture_alert_threshold_seconds = 10
 
     # Should change position every
     # shouldChangePositionEvery = 30
-    shouldChangePositionEvery = float("inf")
+    #shouldChangePositionEvery = float("inf")
 
     old_l_shldr_y = None
 
@@ -181,12 +183,7 @@ def main(double_camera=False):
     # Initialize frame counters for standing/sitting
     frames_without_changing_position = 0
 
-    # Meta.
-    fps = 1
-    
     # Initialize frame counters for posture
-    good_frames = 0
-    bad_frames  = 0
     mp_pose = mp.solutions.pose
 
     # For webcam input:
@@ -277,10 +274,10 @@ def main(double_camera=False):
                     
         # Determine whether good posture or bad posture.
         # The threshold angles have been set based on intuition.
+        now = datetime.now()
         if is_bad_posture(neck_inclination, torso_inclination):
-            bad_frames = 0
-            good_frames += 1
-            
+            good_time_start = now # no bad time
+
             cv2.putText(image, angle_text_string, (10, 30), font, 0.9, light_green, 2)
             cv2.putText(image, str(int(neck_inclination)), (left_shoulder_cords.x + 10, left_shoulder_cords.y), font, 0.9, light_green, 2)
             cv2.putText(image, str(int(torso_inclination)), (hip_cords.x + 10, hip_cords.y), font, 0.9, light_green, 2)
@@ -292,9 +289,7 @@ def main(double_camera=False):
             cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), green, 4)
         
         else:
-            bad_time_start = datetime.now()
-            good_frames = 0
-            bad_frames += 1
+            bad_time_start = now # no good time
         
             cv2.putText(image, angle_text_string, (10, 30), font, 0.9, red, 2)
             cv2.putText(image, str(int(neck_inclination)), (left_shoulder_cords.x + 10, left_shoulder_cords.y), font, 0.9, red, 2)
@@ -307,14 +302,11 @@ def main(double_camera=False):
             cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), red, 4)
         
         # Calculate the time of remaining in a particular posture.
-        good_time = (1 / fps) * good_frames
-        # 
-        # bad_time =  (1 / fps) * bad_frames
-        # bad_frames 0
-        bad_time = datetime.now() - bad_time_start
+        good_time = now - good_time_start
+        bad_time = now - bad_time_start
 
         # Pose time.
-        if good_time > 0:
+        if good_time.total_seconds() > 0:
             time_string_good = 'Good Posture frames : ' + str(round(good_time, 1)) + ''
             print(time_string_good)
             cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
@@ -325,10 +317,9 @@ def main(double_camera=False):
         
         if bad_time.total_seconds() > bad_posture_alert_threshold_seconds:
             sendWarningBadPosture(desk, current_desk_position)
-            bad_frames = 0
-            good_frames = 0
             current_desk_position = DeskState.MIDDLE
-            bad_time_start = datetime.now()
+            bad_time_start = now
+            good_time_start = now
 
         # setting initial values
         if old_l_shldr_y == None: 
@@ -356,8 +347,6 @@ def main(double_camera=False):
         # update values
         old_l_shldr_y = left_shoulder_cords.y
         cv2.imshow('MediaPipe Pose',image)
-
-        # time.sleep(1 / fps)
 
     cap.release()
     # desk.close()
