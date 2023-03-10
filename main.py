@@ -8,6 +8,7 @@ import math as m
 import json
 import pprint
 import requests
+from datetime import datetime
 
 from desk_controller import DeskController
 class DeskState(Enum):
@@ -157,11 +158,12 @@ def shake_desk(desk, current_desk_position) :
         desk.descend_to_half()
         
 def main(double_camera=False):
+    bad_time_start = datetime.now()
     desk = DeskController()
     desk.ascend_to_top()
     current_desk_position = DeskState.TOP
 
-
+    
     # If you stay in bad posture for more than 10 seconds send an alert.
     bad_posture_alert_threshold_seconds = 10
 
@@ -287,6 +289,7 @@ def main(double_camera=False):
             cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), green, 4)
         
         else:
+            bad_time_start = datetime.now()
             good_frames = 0
             bad_frames += 1
         
@@ -302,8 +305,11 @@ def main(double_camera=False):
         
         # Calculate the time of remaining in a particular posture.
         good_time = (1 / fps) * good_frames
-        bad_time =  (1 / fps) * bad_frames
-        
+        # 
+        # bad_time =  (1 / fps) * bad_frames
+        # bad_frames 0
+        bad_time = datetime.now() - bad_time_start
+
         # Pose time.
         if good_time > 0:
             time_string_good = 'Good Posture frames : ' + str(round(good_time, 1)) + ''
@@ -314,11 +320,12 @@ def main(double_camera=False):
             print(time_string_bad)
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
-        if bad_time > bad_posture_alert_threshold_seconds:
+        if bad_time.total_seconds() > bad_posture_alert_threshold_seconds:
             sendWarningBadPosture(desk, current_desk_position)
             bad_frames = 0
             good_frames = 0
             current_desk_position = DeskState.MIDDLE
+            bad_time_start = datetime.now()
 
         # setting initial values
         if old_l_shldr_y == None: 
@@ -347,10 +354,10 @@ def main(double_camera=False):
         old_l_shldr_y = left_shoulder_cords.y
         cv2.imshow('MediaPipe Pose',image)
 
-        time.sleep(1 / fps)
+        # time.sleep(1 / fps)
 
     cap.release()
     # desk.close()
 
 if __name__ == "__main__":
-    main()
+    main(double_camera=True)
