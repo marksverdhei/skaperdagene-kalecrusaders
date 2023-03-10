@@ -307,7 +307,7 @@ def main(double_camera=False):
 
         # Pose time.
         if good_time.total_seconds() > 0:
-            time_string_good = 'Good Posture time : ' + str(round(good_time, 1)) + ''
+            time_string_good = 'Good Posture time : ' + str(round(good_time.total_seconds(), 1)) + ''
             print(time_string_good)
             cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
         else:
