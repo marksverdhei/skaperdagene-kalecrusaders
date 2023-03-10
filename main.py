@@ -346,4 +346,4 @@ def main(double_camera=False):
     # desk.close()
 
 if __name__ == "__main__":
-    main(double_camera=False)
+    main(double_camera=True)
