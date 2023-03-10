@@ -158,21 +158,25 @@ def shake_desk(desk, current_desk_position) :
         desk.descend_to_half()
         
 def main(double_camera=False):
-    bad_time_start = datetime.now()
     desk = DeskController()
     desk.ascend_to_top()
+    bad_time_start = datetime.now()
     current_desk_position = DeskState.TOP
 
     
     # If you stay in bad posture for more than 10 seconds send an alert.
-    bad_posture_alert_threshold_seconds = 10
+    bad_posture_alert_threshold_seconds = 60
 
     # Should change position every
-    shouldChangePositionEvery = 30
+    # shouldChangePositionEvery = 30
+    shouldChangePositionEvery = float("inf")
+
     old_l_shldr_y = None
 
     # Should leave desk every 
-    shouldChangeLeaveDeskEvery = 180
+    # shouldChangeLeaveDeskEvery = 180
+    shouldChangeLeaveDeskEvery = float("inf")
+
         
     # Initialize frame counters for standing/sitting
     frames_without_changing_position = 0
