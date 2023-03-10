@@ -4,6 +4,9 @@ import cv2
 import mediapipe as mp
 from mediapipe.python.solutions.pose import PoseLandmark
 import math as m
+import json
+import pprint
+import requests
 
 from desk_controller import DeskController
 # from desk_controller import DeskContorller
@@ -111,8 +114,11 @@ def get_body_cords(results, h, w):
 
 
 def main(double_camera=False):
+    
     desk = DeskController()
-    desk.descend_to_bottom()
+    desk.ascend_to_top()
+
+
 
     # If you stay in bad posture for more than 30 seconds send an alert.
     shouldNotBeInBadPostureForSeconds = 30
@@ -132,6 +138,16 @@ def main(double_camera=False):
     bad_frames  = 0
     mp_pose = mp.solutions.pose
 
+    url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    headers = {'Accept': 'text/event-stream'}
+    s = requests.Session()
+    with s.get(url, headers=None, stream=True, verify=False) as resp:
+        for event in resp.iter_lines():
+            if event:
+                message = event.decode('utf8')
+                if message == "event: Button":
+                    desk.descend_to_bottom()
+                    print("Button pressed")
+                    exit()
 
     # For webcam input:
     cap = cv2.VideoCapture(0)
@@ -265,6 +281,8 @@ def main(double_camera=False):
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
         if bad_time > shouldNotBeInBadPostureForSeconds:
+            bad_frames = 0
+            good_frames = 0
             sendWarningBadPosture(desk)
 
         # setting initial values
