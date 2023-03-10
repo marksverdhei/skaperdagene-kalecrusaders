@@ -1,9 +1,13 @@
+from collections import namedtuple
 import time
 import cv2
 import mediapipe as mp
 from mediapipe.python.solutions.pose import PoseLandmark
 import math as m
-from desk_controller import DeskContorller
+# from desk_controller import DeskContorller
+
+
+Point = namedtuple("Point", ["x", "y"])
 
 # costants
 # Font type.
@@ -63,6 +67,45 @@ def has_change_position( newShoulderY, oldShoulderY, height ) -> bool:
     return abs(newShoulderY-oldShoulderY) > (height / 20)
 
 
+def get_body_cords(results, h, w):
+    lm = results.pose_landmarks
+    lmPose  = mp.solutions.pose.PoseLandmark
+    # Left shoulder.
+    l_shldr_x = int(lm.landmark[lmPose.LEFT_SHOULDER].x * w)
+    l_shldr_y = int(lm.landmark[lmPose.LEFT_SHOULDER].y * h)
+    
+    # Right shoulder.
+    r_shldr_x = int(lm.landmark[lmPose.RIGHT_SHOULDER].x * w)
+    r_shldr_y = int(lm.landmark[lmPose.RIGHT_SHOULDER].y * h)
+    
+    # Left ear.
+    l_ear_x = int(lm.landmark[lmPose.LEFT_EAR].x * w)
+    l_ear_y = int(lm.landmark[lmPose.LEFT_EAR].y * h)
+    
+    # Left hip.
+    l_hip_x = int(lm.landmark[lmPose.LEFT_HIP].x * w)
+    l_hip_y = int(lm.landmark[lmPose.LEFT_HIP].y * h)
+
+    return [
+        Point(
+            l_shldr_x,
+            l_shldr_y
+        ),
+        Point(
+            r_shldr_x,
+            r_shldr_y
+        ),
+        Point(
+            l_ear_x,
+            l_ear_y
+        ),
+        Point(
+            l_hip_x,
+            l_hip_y
+        ),
+    ]
+
+
 def main(double_camera=False):
     # If you stay in bad posture for more than 30 seconds send an alert.
     shouldNotBeInBadPostureForSeconds = 30
@@ -80,11 +123,8 @@ def main(double_camera=False):
     # Initialize frame counters for posture
     good_frames = 0
     bad_frames  = 0
-
-
-    mp_drawing = mp.solutions.drawing_utils
-    mp_drawing_styles = mp.solutions.drawing_styles
     mp_pose = mp.solutions.pose
+
 
     # For webcam input:
     cap = cv2.VideoCapture(0)
@@ -100,7 +140,6 @@ def main(double_camera=False):
             print("Ignoring empty camera frame.")
             continue
 
-        _, width, _ = image.shape
         double_camera = False
         if double_camera:
             image = split_image(image)
@@ -112,18 +151,11 @@ def main(double_camera=False):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = model.process(image)
 
+
         # Draw the pose annotation on the image.
         image.flags.writeable = True
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-        # to print the 33 landmarks, removed for this demo
-        # mp_drawing.draw_landmarks(
-        #     image,
-        #     results.pose_landmarks,
-        #     mp_pose.POSE_CONNECTIONS,
-        #     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
-        # Flip the image horizontally for a selfie-view display.
-        # cv2.imshow('MediaPipe Pose', cv2.flip(image, 1))
 
         if cv2.waitKey(5) & 0xFF == 27:
             break
@@ -131,30 +163,21 @@ def main(double_camera=False):
         if results.pose_landmarks == None :
             continue
 
-
         h, w = image.shape[:2]
-
-        # Use lm and lmPose as representative of the following methods.
-        lm = results.pose_landmarks
-        lmPose  = mp_pose.PoseLandmark
-        # Left shoulder.
-        l_shldr_x = int(lm.landmark[lmPose.LEFT_SHOULDER].x * w)
-        l_shldr_y = int(lm.landmark[lmPose.LEFT_SHOULDER].y * h)
-        
-        # Right shoulder.
-        r_shldr_x = int(lm.landmark[lmPose.RIGHT_SHOULDER].x * w)
-        r_shldr_y = int(lm.landmark[lmPose.RIGHT_SHOULDER].y * h)
-        
-        # Left ear.
-        l_ear_x = int(lm.landmark[lmPose.LEFT_EAR].x * w)
-        l_ear_y = int(lm.landmark[lmPose.LEFT_EAR].y * h)
-        
-        # Left hip.
-        l_hip_x = int(lm.landmark[lmPose.LEFT_HIP].x * w)
-        l_hip_y = int(lm.landmark[lmPose.LEFT_HIP].y * h)
+        (
+            left_shoulder_cords,
+            right_shoulder_cords,
+            ear_cords,
+            hip_cords
+        ) = get_body_cords(results, h, w)
 
         # Calculate distance between left shoulder and right shoulder points.
-        offset = find_distance(l_shldr_x, l_shldr_y, r_shldr_x, r_shldr_y)
+        offset = find_distance(
+            left_shoulder_cords.x,
+            left_shoulder_cords.y,
+            right_shoulder_cords.x,
+            left_shoulder_cords.y
+        )
         
         # Assist to align the camera to point at the side view of the person.
         # Offset threshold 30 is based on results obtained from analysis over 100 samples.
@@ -165,25 +188,25 @@ def main(double_camera=False):
         
 
         # Calculate angles.
-        neck_inclination = findAngle(l_shldr_x, l_shldr_y, l_ear_x, l_ear_y)
-        torso_inclination = findAngle(l_hip_x, l_hip_y, l_shldr_x, l_shldr_y)
+        neck_inclination = findAngle(*left_shoulder_cords, *ear_cords)
+        torso_inclination = findAngle(*hip_cords, *left_shoulder_cords)
         
         print("neck: " + str(neck_inclination))
         print("torso: " + str(torso_inclination))
 
-        # Draw landmarks.
-        cv2.circle(image, (l_shldr_x, l_shldr_y), 7, yellow, -1)
-        cv2.circle(image, (l_ear_x, l_ear_y), 7, yellow, -1)
+        # Draw landmarks.h
+        cv2.circle(image, left_shoulder_cords, 7, yellow, -1)
+        cv2.circle(image, ear_cords, 7, yellow, -1)
         
         # Let's take y - coordinate of P3 100px above x1,  for display elegance.
         # Although we are taking y = 0 while calculating angle between P1,P2,P3.
-        cv2.circle(image, (l_shldr_x, l_shldr_y - 100), 7, yellow, -1)
-        cv2.circle(image, (r_shldr_x, r_shldr_y), 7, pink, -1)
-        cv2.circle(image, (l_hip_x, l_hip_y), 7, yellow, -1)
+        cv2.circle(image, (left_shoulder_cords.x, left_shoulder_cords.y - 100), 7, yellow, -1)
+        cv2.circle(image, right_shoulder_cords, 7, pink, -1)
+        cv2.circle(image, hip_cords, 7, yellow, -1)
         
         # Similarly, here we are taking y - coordinate 100px above x1. Note that
         # you can take any value for y, not necessarily 100 or 200 pixels.
-        cv2.circle(image, (l_hip_x, l_hip_y - 100), 7, yellow, -1)
+        cv2.circle(image, (hip_cords.x, hip_cords.y - 100), 7, yellow, -1)
         
         # Put text, Posture and angle inclination.
         # Text string for display.
@@ -197,28 +220,28 @@ def main(double_camera=False):
             good_frames += 1
             
             cv2.putText(image, angle_text_string, (10, 30), font, 0.9, light_green, 2)
-            cv2.putText(image, str(int(neck_inclination)), (l_shldr_x + 10, l_shldr_y), font, 0.9, light_green, 2)
-            cv2.putText(image, str(int(torso_inclination)), (l_hip_x + 10, l_hip_y), font, 0.9, light_green, 2)
+            cv2.putText(image, str(int(neck_inclination)), (left_shoulder_cords.x + 10, left_shoulder_cords.y), font, 0.9, light_green, 2)
+            cv2.putText(image, str(int(torso_inclination)), (hip_cords.x + 10, hip_cords.y), font, 0.9, light_green, 2)
         
             # Join landmarks.
-            cv2.line(image, (l_shldr_x, l_shldr_y), (l_ear_x, l_ear_y), green, 4)
-            cv2.line(image, (l_shldr_x, l_shldr_y), (l_shldr_x, l_shldr_y - 100), green, 4)
-            cv2.line(image, (l_hip_x, l_hip_y), (l_shldr_x, l_shldr_y), green, 4)
-            cv2.line(image, (l_hip_x, l_hip_y), (l_hip_x, l_hip_y - 100), green, 4)
+            cv2.line(image, left_shoulder_cords, ear_cords, green, 4)
+            cv2.line(image, left_shoulder_cords, (left_shoulder_cords.x, left_shoulder_cords.y - 100), green, 4)
+            cv2.line(image, hip_cords, left_shoulder_cords, green, 4)
+            cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), green, 4)
         
         else:
             good_frames = 0
             bad_frames += 1
         
             cv2.putText(image, angle_text_string, (10, 30), font, 0.9, red, 2)
-            cv2.putText(image, str(int(neck_inclination)), (l_shldr_x + 10, l_shldr_y), font, 0.9, red, 2)
-            cv2.putText(image, str(int(torso_inclination)), (l_hip_x + 10, l_hip_y), font, 0.9, red, 2)
+            cv2.putText(image, str(int(neck_inclination)), (left_shoulder_cords.x + 10, left_shoulder_cords.y), font, 0.9, red, 2)
+            cv2.putText(image, str(int(torso_inclination)), (hip_cords.x + 10, hip_cords.y), font, 0.9, red, 2)
         
             # Join landmarks.
-            cv2.line(image, (l_shldr_x, l_shldr_y), (l_ear_x, l_ear_y), red, 4)
-            cv2.line(image, (l_shldr_x, l_shldr_y), (l_shldr_x, l_shldr_y - 100), red, 4)
-            cv2.line(image, (l_hip_x, l_hip_y), (l_shldr_x, l_shldr_y), red, 4)
-            cv2.line(image, (l_hip_x, l_hip_y), (l_hip_x, l_hip_y - 100), red, 4)
+            cv2.line(image, left_shoulder_cords, ear_cords, red, 4)
+            cv2.line(image, left_shoulder_cords, (left_shoulder_cords.x, left_shoulder_cords.y - 100), red, 4)
+            cv2.line(image, hip_cords, left_shoulder_cords, red, 4)
+            cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), red, 4)
         
         # Calculate the time of remaining in a particular posture.
         good_time = (1 / fps) * good_frames
@@ -239,12 +262,12 @@ def main(double_camera=False):
 
         # setting initial values
         if old_l_shldr_y == None: 
-            old_l_shldr_y = l_shldr_y
+            old_l_shldr_y = left_shoulder_cords.y
         
         # checking if the person has changed position between standing / sitting
         ## checking that I have all the values or this check makes no sense
-        if should_check_changed_position( l_shldr_y,  old_l_shldr_y, h):
-            if has_change_position( l_shldr_y,  old_l_shldr_y, h):
+        if should_check_changed_position(left_shoulder_cords.y,  old_l_shldr_y, h):
+            if has_change_position(left_shoulder_cords.y,  old_l_shldr_y, h):
                 frames_without_changing_position = 0
                 print("changed position")
             else:
@@ -253,14 +276,11 @@ def main(double_camera=False):
 
             if frames_without_changing_position > shouldChangePositionEvery:
                 print("TODO: some alarm here")
-
-            
         else:
             print("skipping position change")
         
         # update values
-        old_l_shldr_y = l_shldr_y
-        
+        old_l_shldr_y = left_shoulder_cords.y
         cv2.imshow('MediaPipe Pose',image)
 
         time.sleep(1 / fps)
@@ -269,6 +289,6 @@ def main(double_camera=False):
 
 
 if __name__ == "__main__":
-    # main()
-    with DeskController() as desk:
-        desk.ascend_to_top()
+    main()
+    # with DeskController() as desk:
+    #     desk.ascend_to_top()
