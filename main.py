@@ -1,4 +1,5 @@
 from collections import namedtuple
+from enum import Enum
 import time
 import cv2
 import mediapipe as mp
@@ -9,8 +10,10 @@ import pprint
 import requests
 
 from desk_controller import DeskController
-# from desk_controller import DeskContorller
-
+class DeskState(Enum):
+    TOP = 1
+    MIDDLE = 2
+    BOTTOM = 3
 
 Point = namedtuple("Point", ["x", "y"])
 
@@ -48,10 +51,8 @@ def findAngle(x1, y1, x2, y2):
     degree = int(180/m.pi)*theta
     return degree
 
-def sendWarningBadPosture(desk):
-    desk.ascend_to_top()
-    time.sleep(10)
-    desk.descend_to_bottom()
+def sendWarningBadPosture(desk, current_desk_position):
+    shake_desk(desk, current_desk_position)
 
 def is_bad_posture(neck_inclination, torso_inclination ) -> bool:
     return neck_inclination < 40 and torso_inclination < 10
@@ -112,20 +113,44 @@ def get_body_cords(results, h, w):
         ),
     ]
 
+def toggle_desk(desk, current_desk_position):
+    if current_desk_position == DeskState.TOP:
+        desk.descend_to_bottom()
+        return DeskState.BOTTOM
+    if current_desk_position == DeskState.BOTTOM :
+        desk.ascend_to_top()
+        return DeskState.TOP
 
+
+def shake_desk(desk, current_desk_position) :
+    if current_desk_position == DeskState.TOP:
+        desk.descend_to_half()
+        desk.ascend_to_top()
+    
+    if current_desk_position == DeskState.BOTTOM:
+        desk.ascend_to_half()
+        desk.descend_to_bottom()
+
+    if current_desk_position == DeskState.MIDDLE:
+        desk.ascend_to_top()
+        desk.descend_to_half()
+        
 def main(double_camera=False):
     
     desk = DeskController()
     desk.ascend_to_top()
+    current_desk_position = DeskState.TOP
 
 
-
-    # If you stay in bad posture for more than 30 seconds send an alert.
-    shouldNotBeInBadPostureForSeconds = 30
+    # If you stay in bad posture for more than 10 seconds send an alert.
+    shouldNotBeInBadPostureForSeconds = 10
 
     # Should change position every
     shouldChangePositionEvery = 30
     old_l_shldr_y = None
+
+    # Should leave desk every 
+    shouldChangeLeaveDeskEvery = 180
         
     # Initialize frame counters for standing/sitting
     frames_without_changing_position = 0
@@ -138,7 +163,8 @@ def main(double_camera=False):
     bad_frames  = 0
     mp_pose = mp.solutions.pose
 
-    url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    headers = {'Accept': 'text/event-stream'}
+    url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    
+    # headers = {'Accept': 'text/event-stream'}
     s = requests.Session()
     with s.get(url, headers=None, stream=True, verify=False) as resp:
         for event in resp.iter_lines():
@@ -146,8 +172,11 @@ def main(double_camera=False):
                 message = event.decode('utf8')
                 if message == "event: Button":
                     desk.descend_to_bottom()
-                    print("Button pressed")
-                    exit()
+                    good_frames = 0
+                    bad_frames = 0
+                    current_desk_position = DeskState.BOTTOM
+                    print("Button pressed: reset state")
+                    
 
     # For webcam input:
     cap = cv2.VideoCapture(0)
@@ -283,7 +312,7 @@ def main(double_camera=False):
         if bad_time > shouldNotBeInBadPostureForSeconds:
             bad_frames = 0
             good_frames = 0
-            sendWarningBadPosture(desk)
+            sendWarningBadPosture(desk, current_desk_position)
 
         # setting initial values
         if old_l_shldr_y == None: 
@@ -295,12 +324,16 @@ def main(double_camera=False):
             if has_change_position(left_shoulder_cords.y,  old_l_shldr_y, h):
                 frames_without_changing_position = 0
                 print("changed position")
+                cv2.putText(image, "changed position", (10, h - 40), font, 0.9, green, 2)
+        
             else:
                 frames_without_changing_position += 1
                 print("not changed position in " + str(frames_without_changing_position))
-
+                cv2.putText(image, "not changed position in" + str(frames_without_changing_position), (10, h - 40), font, 0.9, yellow, 2)
             if frames_without_changing_position > shouldChangePositionEvery:
-                print("TODO: some alarm here")
+                print("change desk position")
+                current_desk_position = toggle_desk(desk, current_desk_position)
+                cv2.putText(image, "MUST CHANGE POSITION", (10, h - 40), font, 0.9, red, 2)
         else:
             print("skipping position change")
         
@@ -315,5 +348,3 @@ def main(double_camera=False):
 
 if __name__ == "__main__":
     main()
-    # with DeskController() as desk:
-    #     desk.ascend_to_top()
