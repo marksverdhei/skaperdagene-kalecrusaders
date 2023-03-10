@@ -8,9 +8,9 @@ import json
 import pprint
 import requests
 
-from desk_controller import DeskController
+# from desk_controller import DeskController
 # from desk_controller import DeskContorller
-
+USE_CAMERA = "right"
 
 Point = namedtuple("Point", ["x", "y"])
 
@@ -32,7 +32,10 @@ def split_image(image):
     "Divides the image in two, if the camera is double"
     _, width, _ = image.shape
     width = width // 2
-    return image[:, :width]
+    if USE_CAMERA == "left":
+        return image[:, :width]
+    else:
+        return image[:, width:]
 
 # helper functions for is_bad_posture
 
@@ -115,10 +118,8 @@ def get_body_cords(results, h, w):
 
 def main(double_camera=False):
     
-    desk = DeskController()
-    desk.ascend_to_top()
-
-
+    # desk = DeskController()
+    # desk.ascend_to_top()
 
     # If you stay in bad posture for more than 30 seconds send an alert.
     shouldNotBeInBadPostureForSeconds = 30
@@ -138,16 +139,16 @@ def main(double_camera=False):
     bad_frames  = 0
     mp_pose = mp.solutions.pose
 
-    url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    headers = {'Accept': 'text/event-stream'}
-    s = requests.Session()
-    with s.get(url, headers=None, stream=True, verify=False) as resp:
-        for event in resp.iter_lines():
-            if event:
-                message = event.decode('utf8')
-                if message == "event: Button":
-                    desk.descend_to_bottom()
-                    print("Button pressed")
-                    exit()
+    # url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    headers = {'Accept': 'text/event-stream'}
+    # s = requests.Session()
+    # with s.get(url, headers=None, stream=True, verify=False) as resp:
+    #     for event in resp.iter_lines():
+    #         if event:
+    #             message = event.decode('utf8')
+    #             if message == "event: Button":
+    #                 desk.descend_to_bottom()
+    #                 print("Button pressed")
+    #                 exit()
 
     # For webcam input:
     cap = cv2.VideoCapture(0)
@@ -272,18 +273,18 @@ def main(double_camera=False):
         
         # Pose time.
         if good_time > 0:
-            time_string_good = 'Good Posture Time : ' + str(round(good_time, 1)) + 's'
+            time_string_good = 'Good Posture frames : ' + str(round(good_time, 1)) + ''
             print(time_string_good)
             cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
         else:
-            time_string_bad = 'Bad Posture Time : ' + str(round(bad_time, 1)) + 's'
+            time_string_bad = 'Bad Posture frames : ' + str(round(bad_time, 1)) + ''
             print(time_string_bad)
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
         if bad_time > shouldNotBeInBadPostureForSeconds:
             bad_frames = 0
             good_frames = 0
-            sendWarningBadPosture(desk)
+            # sendWarningBadPosture(desk)
 
         # setting initial values
         if old_l_shldr_y == None: 
@@ -308,10 +309,10 @@ def main(double_camera=False):
         old_l_shldr_y = left_shoulder_cords.y
         cv2.imshow('MediaPipe Pose',image)
 
-        time.sleep(1 / fps)
+        # time.sleep(1 / fps)
 
     cap.release()
-    desk.close()
+    # desk.close()
 
 if __name__ == "__main__":
     main()
