@@ -10,7 +10,11 @@ import pprint
 import requests
 from datetime import datetime
 
-from desk_controller import DeskController
+try:
+    from desk_controller import DeskController
+except ImportError:
+    from mock_desk import DeskController
+
 class DeskState(Enum):
     TOP = 1
     MIDDLE = 2
