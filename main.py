@@ -310,7 +310,7 @@ def main(double_camera=False):
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
         if bad_time.total_seconds() > bad_posture_alert_threshold_seconds:
-            sendWarningBadPosture(desk, current_desk_position)
+            sendWarningBadPosture(desk)
             current_desk_position = DeskState.MIDDLE
             bad_time_start = now
             good_time_start = now
