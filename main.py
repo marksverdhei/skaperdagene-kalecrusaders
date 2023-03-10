@@ -57,7 +57,21 @@ def findAngle(x1, y1, x2, y2):
     return degree
 
 def sendWarningBadPosture(desk, current_desk_position):
-    shake_desk(desk, current_desk_position)
+    # shake_desk(desk, current_desk_position)
+    desk.ascend_to_top()
+    url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    
+    # headers = {'Accept': 'text/event-stream'}
+    s = requests.Session()
+    with s.get(url, headers=None, stream=True, verify=False) as resp:
+        for event in resp.iter_lines():
+            if event:
+                message = event.decode('utf8')
+                if message == "event: Button":
+                    desk.descend_to_half()
+                    current_desk_position = DeskState.BOTTOM
+                    print("Button pressed: reset state")
+                    break
+                    
 
 def is_bad_posture(neck_inclination, torso_inclination ) -> bool:
     return neck_inclination < 40 and torso_inclination < 10
@@ -118,6 +132,7 @@ def get_body_cords(results, h, w):
         ),
     ]
 
+
 def toggle_desk(desk, current_desk_position):
     if current_desk_position == DeskState.TOP:
         desk.descend_to_bottom()
@@ -141,14 +156,13 @@ def shake_desk(desk, current_desk_position) :
         desk.descend_to_half()
         
 def main(double_camera=False):
-    
     desk = DeskController()
     desk.ascend_to_top()
     current_desk_position = DeskState.TOP
 
 
     # If you stay in bad posture for more than 10 seconds send an alert.
-    shouldNotBeInBadPostureForSeconds = 10
+    bad_posture_alert_threshold_seconds = 10
 
     # Should change position every
     shouldChangePositionEvery = 30
@@ -167,21 +181,6 @@ def main(double_camera=False):
     good_frames = 0
     bad_frames  = 0
     mp_pose = mp.solutions.pose
-
-    url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    
-    # headers = {'Accept': 'text/event-stream'}
-    s = requests.Session()
-    with s.get(url, headers=None, stream=True, verify=False) as resp:
-        for event in resp.iter_lines():
-            if event:
-                message = event.decode('utf8')
-                if message == "event: Button":
-                    desk.descend_to_bottom()
-                    good_frames = 0
-                    bad_frames = 0
-                    current_desk_position = DeskState.BOTTOM
-                    print("Button pressed: reset state")
-                    
 
     # For webcam input:
     cap = cv2.VideoCapture(0)
@@ -314,10 +313,10 @@ def main(double_camera=False):
             print(time_string_bad)
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
-        if bad_time > shouldNotBeInBadPostureForSeconds:
+        if bad_time > bad_posture_alert_threshold_seconds:
+            sendWarningBadPosture(desk, current_desk_position)
             bad_frames = 0
             good_frames = 0
-            sendWarningBadPosture(desk, current_desk_position)
 
         # setting initial values
         if old_l_shldr_y == None: 
@@ -346,7 +345,7 @@ def main(double_camera=False):
         old_l_shldr_y = left_shoulder_cords.y
         cv2.imshow('MediaPipe Pose',image)
 
-        # time.sleep(1 / fps)
+        time.sleep(1 / fps)
 
     cap.release()
     # desk.close()
