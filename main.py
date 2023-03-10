@@ -15,6 +15,8 @@ class DeskState(Enum):
     MIDDLE = 2
     BOTTOM = 3
 
+USE_CAMERA = "right"
+
 Point = namedtuple("Point", ["x", "y"])
 
 # costants
@@ -35,7 +37,10 @@ def split_image(image):
     "Divides the image in two, if the camera is double"
     _, width, _ = image.shape
     width = width // 2
-    return image[:, :width]
+    if USE_CAMERA == "left":
+        return image[:, :width]
+    else:
+        return image[:, width:]
 
 # helper functions for is_bad_posture
 
@@ -301,11 +306,11 @@ def main(double_camera=False):
         
         # Pose time.
         if good_time > 0:
-            time_string_good = 'Good Posture Time : ' + str(round(good_time, 1)) + 's'
+            time_string_good = 'Good Posture frames : ' + str(round(good_time, 1)) + ''
             print(time_string_good)
             cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
         else:
-            time_string_bad = 'Bad Posture Time : ' + str(round(bad_time, 1)) + 's'
+            time_string_bad = 'Bad Posture frames : ' + str(round(bad_time, 1)) + ''
             print(time_string_bad)
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
@@ -341,10 +346,10 @@ def main(double_camera=False):
         old_l_shldr_y = left_shoulder_cords.y
         cv2.imshow('MediaPipe Pose',image)
 
-        time.sleep(1 / fps)
+        # time.sleep(1 / fps)
 
     cap.release()
-    desk.close()
+    # desk.close()
 
 if __name__ == "__main__":
     main()
