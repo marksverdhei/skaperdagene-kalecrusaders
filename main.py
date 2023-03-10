@@ -78,7 +78,7 @@ def sendWarningBadPosture(desk):
                     
 
 def is_bad_posture(neck_inclination, torso_inclination ) -> bool:
-    return neck_inclination < 40 and torso_inclination < 10
+    return not(neck_inclination < 40 and torso_inclination < 10)
 
 def should_check_changed_position(newShoulderY, oldShoulderY, height ) -> bool:
     if (newShoulderY != None and oldShoulderY == None) or (newShoulderY == None and oldShoulderY != None):
@@ -280,29 +280,20 @@ def main(double_camera=False):
         now = datetime.now()
         if is_bad_posture(neck_inclination, torso_inclination):
             good_time_start = now # no bad time
-
-            cv2.putText(image, angle_text_string, (10, 30), font, 0.9, light_green, 2)
-            cv2.putText(image, str(int(neck_inclination)), (left_shoulder_cords.x + 10, left_shoulder_cords.y), font, 0.9, light_green, 2)
-            cv2.putText(image, str(int(torso_inclination)), (hip_cords.x + 10, hip_cords.y), font, 0.9, light_green, 2)
-        
-            # Join landmarks.
-            cv2.line(image, left_shoulder_cords, ear_cords, green, 4)
-            cv2.line(image, left_shoulder_cords, (left_shoulder_cords.x, left_shoulder_cords.y - 100), green, 4)
-            cv2.line(image, hip_cords, left_shoulder_cords, green, 4)
-            cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), green, 4)
-        
+            label_color = red
         else:
             bad_time_start = now # no good time
+            label_color = green
         
-            cv2.putText(image, angle_text_string, (10, 30), font, 0.9, red, 2)
-            cv2.putText(image, str(int(neck_inclination)), (left_shoulder_cords.x + 10, left_shoulder_cords.y), font, 0.9, red, 2)
-            cv2.putText(image, str(int(torso_inclination)), (hip_cords.x + 10, hip_cords.y), font, 0.9, red, 2)
-        
-            # Join landmarks.
-            cv2.line(image, left_shoulder_cords, ear_cords, red, 4)
-            cv2.line(image, left_shoulder_cords, (left_shoulder_cords.x, left_shoulder_cords.y - 100), red, 4)
-            cv2.line(image, hip_cords, left_shoulder_cords, red, 4)
-            cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), red, 4)
+        cv2.putText(image, angle_text_string, (10, 30), font, 0.9, label_color, 2)
+        cv2.putText(image, str(int(neck_inclination)), (left_shoulder_cords.x + 10, left_shoulder_cords.y), font, 0.9, label_color, 2)
+        cv2.putText(image, str(int(torso_inclination)), (hip_cords.x + 10, hip_cords.y), font, 0.9, label_color, 2)
+    
+        # Join landmarks.
+        cv2.line(image, left_shoulder_cords, ear_cords, label_color, 4)
+        cv2.line(image, left_shoulder_cords, (left_shoulder_cords.x, left_shoulder_cords.y - 100), label_color, 4)
+        cv2.line(image, hip_cords, left_shoulder_cords, label_color, 4)
+        cv2.line(image, hip_cords, (hip_cords.x, hip_cords.y - 100), label_color, 4)
         
         # Calculate the time of remaining in a particular posture.
         good_time = now - good_time_start
@@ -355,4 +346,4 @@ def main(double_camera=False):
     # desk.close()
 
 if __name__ == "__main__":
-    main(double_camera=True)
+    main(double_camera=False)
