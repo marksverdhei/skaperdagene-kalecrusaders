@@ -51,5 +51,8 @@ class DeskController:
        return self
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb):
+        self.close()
+
+    def close(self):
         self.servo.close()
         GPIO.cleanup()
