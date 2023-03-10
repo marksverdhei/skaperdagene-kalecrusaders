@@ -166,7 +166,7 @@ def main(double_camera=False):
     bad_time_start = datetime.now()
     good_time_start = datetime.now()
 
-    current_desk_position = DeskState.TOP
+    current_desk_position = DeskState.MIDDLE
 
     
     # If you stay in bad posture for more than 10 seconds send an alert.
@@ -329,7 +329,7 @@ def main(double_camera=False):
                 cv2.putText(image, "changed position", (10, h - 40), font, 0.9, green, 2)
         
             else:
-                string = str("not changed position in " + str((now - last_time_changed_position).total_seconds))
+                string = "not changed position in " + str((now - last_time_changed_position).total_seconds())
                 print(string)
                 cv2.putText(image, "not changed position in" + (string), (10, h - 50), font, 0.9, yellow, 2)
             if (now - last_time_changed_position).total_seconds() > shouldChangePositionEvery:
