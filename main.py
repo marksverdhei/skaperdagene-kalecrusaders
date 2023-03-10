@@ -159,7 +159,7 @@ def shake_desk(desk, current_desk_position) :
         
 def main(double_camera=False):
     desk = DeskController()
-    desk.ascend_to_top()
+    # desk.ascend_to_top()
     bad_time_start = datetime.now()
     good_time_start = datetime.now()
 
