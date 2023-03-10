@@ -147,18 +147,18 @@ def toggle_desk(desk, current_desk_position):
         return DeskState.TOP
 
 
-def shake_desk(desk, current_desk_position) :
-    if current_desk_position == DeskState.TOP:
-        desk.descend_to_half()
-        desk.ascend_to_top()
+# def shake_desk(desk, current_desk_position) :
+#     if current_desk_position == DeskState.TOP:
+#         desk.descend_to_half()
+#         desk.ascend_to_top()
     
-    if current_desk_position == DeskState.BOTTOM:
-        desk.ascend_to_half()
-        desk.descend_to_bottom()
+#     if current_desk_position == DeskState.BOTTOM:
+#         desk.ascend_to_half()
+#         desk.descend_to_bottom()
 
-    if current_desk_position == DeskState.MIDDLE:
-        desk.ascend_to_top()
-        desk.descend_to_half()
+#     if current_desk_position == DeskState.MIDDLE:
+#         desk.ascend_to_top()
+#         desk.descend_to_half()
         
 def main(double_camera=False):
     desk = DeskController()
@@ -329,13 +329,14 @@ def main(double_camera=False):
                 cv2.putText(image, "changed position", (10, h - 40), font, 0.9, green, 2)
         
             else:
-                print("not changed position in " + str(last_time_changed_position))
-                cv2.putText(image, "not changed position in" + str(last_time_changed_position), (10, h - 40), font, 0.9, yellow, 2)
+                string = str("not changed position in " + str((now - last_time_changed_position).total_seconds))
+                print(string)
+                cv2.putText(image, "not changed position in" + (string), (10, h - 50), font, 0.9, yellow, 2)
             if (now - last_time_changed_position).total_seconds() > shouldChangePositionEvery:
                 print("change desk position")
                 current_desk_position = toggle_desk(desk, current_desk_position)
                 last_time_changed_position = datetime.now()
-                cv2.putText(image, "MUST CHANGE POSITION", (10, h - 40), font, 0.9, red, 2)
+                cv2.putText(image, "MUST CHANGE POSITION", (10, h - 50), font, 0.9, red, 2)
         else:
             print("skipping position change")
         
