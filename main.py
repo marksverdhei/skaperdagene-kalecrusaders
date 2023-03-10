@@ -334,6 +334,7 @@ def main(double_camera=False):
             if (now - last_time_changed_position).total_seconds() > shouldChangePositionEvery:
                 print("change desk position")
                 current_desk_position = toggle_desk(desk, current_desk_position)
+                last_time_changed_position = datetime.now()
                 cv2.putText(image, "MUST CHANGE POSITION", (10, h - 40), font, 0.9, red, 2)
         else:
             print("skipping position change")
