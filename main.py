@@ -138,13 +138,16 @@ def get_body_cords(results, h, w):
 
 
 def toggle_desk(desk, current_desk_position):
-    if current_desk_position == DeskState.TOP:
-        desk.descend_to_bottom()
-        return DeskState.BOTTOM
-    # elif current_desk_position == DeskState.BOTTOM :
-    else:
-        desk.ascend_to_top()
-        return DeskState.TOP
+    # if current_desk_position == DeskState.TOP:
+    #     desk.descend_to_bottom()
+    #     return DeskState.BOTTOM
+    # # elif current_desk_position == DeskState.BOTTOM :
+    # else:
+    # desk.ascend_to_top()
+    # desk.descend_to_half()
+    sendWarningBadPosture(desk)
+    
+    return DeskState.MIDDLE
 
 
 # def shake_desk(desk, current_desk_position) :
