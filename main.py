@@ -57,7 +57,7 @@ def findAngle(x1, y1, x2, y2):
     degree = int(180/m.pi)*theta
     return degree
 
-def sendWarningBadPosture(desk, current_desk_position):
+def sendWarningBadPosture(desk):
     # shake_desk(desk, current_desk_position)
     desk.ascend_to_top()
     url = "https://api.particle.io/v1/events/Button?access_token=2213b7d75a8756282af2a2a25bb8b3e8856a7f2d"    
@@ -69,7 +69,6 @@ def sendWarningBadPosture(desk, current_desk_position):
                 message = event.decode('utf8')
                 if message == "event: Button":
                     desk.descend_to_half()
-                    current_desk_position = DeskState.BOTTOM
                     print("Button pressed: reset state")
                     break
                     
@@ -320,6 +319,7 @@ def main(double_camera=False):
             current_desk_position = DeskState.MIDDLE
             bad_time_start = now
             good_time_start = now
+            last_time_changed_position = now
 
         # setting initial values
         if old_l_shldr_y == None: 
