@@ -203,7 +203,6 @@ def main(double_camera=False):
             print("Ignoring empty camera frame.")
             continue
 
-        double_camera = False
         if double_camera:
             image = split_image(image)
 
