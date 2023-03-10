@@ -137,7 +137,8 @@ def toggle_desk(desk, current_desk_position):
     if current_desk_position == DeskState.TOP:
         desk.descend_to_bottom()
         return DeskState.BOTTOM
-    if current_desk_position == DeskState.BOTTOM :
+    # elif current_desk_position == DeskState.BOTTOM :
+    else:
         desk.ascend_to_top()
         return DeskState.TOP
 
@@ -317,6 +318,7 @@ def main(double_camera=False):
             sendWarningBadPosture(desk, current_desk_position)
             bad_frames = 0
             good_frames = 0
+            current_desk_position = DeskState.MIDDLE
 
         # setting initial values
         if old_l_shldr_y == None: 
