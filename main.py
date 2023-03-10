@@ -312,9 +312,9 @@ def main(double_camera=False):
         if bad_time.total_seconds() > bad_posture_alert_threshold_seconds:
             sendWarningBadPosture(desk)
             current_desk_position = DeskState.MIDDLE
-            bad_time_start = now
-            good_time_start = now
-            last_time_changed_position = now
+            bad_time_start = datetime.now()
+            good_time_start = datetime.now()
+            last_time_changed_position = datetime.now()
 
         # setting initial values
         if old_l_shldr_y == None: 
