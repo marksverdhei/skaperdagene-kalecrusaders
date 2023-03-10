@@ -171,7 +171,7 @@ def main(double_camera=False):
 
     # Should change position every
     # shouldChangePositionEvery = 30
-    #shouldChangePositionEvery = float("inf")
+    shouldChangePositionEvery = float("inf")
 
     old_l_shldr_y = None
 
@@ -181,7 +181,7 @@ def main(double_camera=False):
 
         
     # Initialize frame counters for standing/sitting
-    frames_without_changing_position = 0
+    last_time_changed_position = datetime.now()
 
     # Initialize frame counters for posture
     mp_pose = mp.solutions.pose
@@ -307,11 +307,11 @@ def main(double_camera=False):
 
         # Pose time.
         if good_time.total_seconds() > 0:
-            time_string_good = 'Good Posture frames : ' + str(round(good_time, 1)) + ''
+            time_string_good = 'Good Posture time : ' + str(round(good_time, 1)) + ''
             print(time_string_good)
             cv2.putText(image, time_string_good, (10, h - 20), font, 0.9, green, 2)
         else:
-            time_string_bad = 'Bad Posture frames : ' + str(round(bad_time.total_seconds(), 1)) + ''
+            time_string_bad = 'Bad Posture time : ' + str(round(bad_time.total_seconds(), 1)) + ''
             print(time_string_bad)
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
@@ -329,15 +329,14 @@ def main(double_camera=False):
         ## checking that I have all the values or this check makes no sense
         if should_check_changed_position(left_shoulder_cords.y,  old_l_shldr_y, h):
             if has_change_position(left_shoulder_cords.y,  old_l_shldr_y, h):
-                frames_without_changing_position = 0
+                last_time_changed_position = now
                 print("changed position")
                 cv2.putText(image, "changed position", (10, h - 40), font, 0.9, green, 2)
         
             else:
-                frames_without_changing_position += 1
-                print("not changed position in " + str(frames_without_changing_position))
-                cv2.putText(image, "not changed position in" + str(frames_without_changing_position), (10, h - 40), font, 0.9, yellow, 2)
-            if frames_without_changing_position > shouldChangePositionEvery:
+                print("not changed position in " + str(last_time_changed_position))
+                cv2.putText(image, "not changed position in" + str(last_time_changed_position), (10, h - 40), font, 0.9, yellow, 2)
+            if now - last_time_changed_position > shouldChangePositionEvery:
                 print("change desk position")
                 current_desk_position = toggle_desk(desk, current_desk_position)
                 cv2.putText(image, "MUST CHANGE POSITION", (10, h - 40), font, 0.9, red, 2)
