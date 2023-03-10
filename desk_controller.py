@@ -37,9 +37,19 @@ class DeskController:
         time.sleep(13)
         self.halt()
 
+    def descend_to_half(self):
+        self.descend()
+        time.sleep(6)
+        self.halt()
+
+    def ascend_to_half(self):
+        self.ascend()
+        time.sleep(6)
+        self.halt()
+
     def __enter__(self):
        return self
 
-    def __exit__(self, _, _, _):
+    def __exit__(self, _exc_type, _exc_val, _exc_tb):
         self.servo.close()
         GPIO.cleanup()
