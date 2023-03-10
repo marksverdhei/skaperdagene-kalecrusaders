@@ -46,7 +46,7 @@ class DeskController:
 
     def descend_to_half(self):
         self.descend()
-        time.sleep(8)
+        time.sleep(10)
         self.halt()
 
     def ascend_to_half(self):
