@@ -173,8 +173,8 @@ def main(double_camera=False):
     bad_posture_alert_threshold_seconds = 10
 
     # Should change position every
-    # shouldChangePositionEvery = 30
-    shouldChangePositionEvery = float("inf")
+    shouldChangePositionEvery = 30
+    #shouldChangePositionEvery = float("inf")
 
     old_l_shldr_y = None
 
