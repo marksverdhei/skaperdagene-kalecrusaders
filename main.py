@@ -3,11 +3,12 @@ import cv2
 import mediapipe as mp
 from mediapipe.python.solutions.pose import PoseLandmark
 import math as m
+from desk_controller import DeskContorller
 
 # costants
 # Font type.
 font = cv2.FONT_HERSHEY_SIMPLEX
-    
+
 # Colors.
 blue = (255, 127, 0)
 red = (50, 50, 255)
@@ -268,4 +269,6 @@ def main(double_camera=False):
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    with DeskController() as desk:
+        desk.ascend_to_top()
