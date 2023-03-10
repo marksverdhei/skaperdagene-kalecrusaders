@@ -4,6 +4,8 @@ import cv2
 import mediapipe as mp
 from mediapipe.python.solutions.pose import PoseLandmark
 import math as m
+
+from desk_controller import DeskController
 # from desk_controller import DeskContorller
 
 
@@ -43,8 +45,10 @@ def findAngle(x1, y1, x2, y2):
     degree = int(180/m.pi)*theta
     return degree
 
-def sendWarningBadPosture(x):
-    print("TODO: warning with sound")
+def sendWarningBadPosture(desk):
+    desk.ascend_to_top()
+    time.sleep(10)
+    desk.descend_to_bottom()
 
 def is_bad_posture(neck_inclination, torso_inclination ) -> bool:
     return neck_inclination < 40 and torso_inclination < 10
@@ -107,6 +111,9 @@ def get_body_cords(results, h, w):
 
 
 def main(double_camera=False):
+    desk = DeskController()
+    desk.descend_to_bottom()
+
     # If you stay in bad posture for more than 30 seconds send an alert.
     shouldNotBeInBadPostureForSeconds = 30
 
@@ -258,7 +265,7 @@ def main(double_camera=False):
             cv2.putText(image, time_string_bad, (10, h - 20), font, 0.9, red, 2)
         
         if bad_time > shouldNotBeInBadPostureForSeconds:
-            sendWarningBadPosture()
+            sendWarningBadPosture(desk)
 
         # setting initial values
         if old_l_shldr_y == None: 
@@ -286,7 +293,7 @@ def main(double_camera=False):
         time.sleep(1 / fps)
 
     cap.release()
-
+    desk.close()
 
 if __name__ == "__main__":
     main()
